@@ -9,9 +9,10 @@ let firstNode, latestNode, nodeToSelect = null;
 let nextNodeID = 0;
 const itemGroup = new THREE.Group();
 
-export function Menu(_camera = null, _properties = null) {
+export function Menu(_scene = null, _camera = null, _properties = null) {
  
   // menu parts
+  this.scene = _scene;
   this.camera = _camera;
   this.itemTray = [];
   this.itemTrayAction = [];
@@ -107,7 +108,9 @@ Menu.prototype.add = function (mesh, _doOnSelect = null) {
   this.itemTray.push(node);
   this.itemTrayAction.push(_doOnSelect);
   itemGroup.add(node.node.item);
-  // Reposition the nodes into rotational setup
+
+  // Add the objects into the scene then reposition into rotational setup
+  this.scene.add(node.node.item);
   this.repositionNodes();
 }
 
@@ -189,10 +192,7 @@ Menu.prototype.animate = function (elapsedTime) {
  */
 Menu.prototype.moveToNext = function () {
   // unless rotate to previous has been added, block this action for now
-  if (nextNodeID <= 1 || !this.revolvingMenu && this.itemSelected >= this.itemTray.length - 1) {
-    keyPressed = false;
-    return;
-  } 
+  if (!this.opened || nextNodeID <= 1 || !this.revolvingMenu && this.itemSelected >= this.itemTray.length - 1) return keyPressed = false;
   
   let startingNode = firstNode, currentNode = startingNode;
   do {
@@ -229,10 +229,7 @@ Menu.prototype.moveToNext = function () {
 
 Menu.prototype.moveToPrev = function () {
   // unless rotate to previous has been added, block this action when exceeding the first entry
-  if (nextNodeID <= 1 || !this.revolvingMenu && this.itemSelected <= 0) {
-    keyPressed = false;
-    return; 
-  }
+  if (!this.opened || nextNodeID <= 1 || !this.revolvingMenu && this.itemSelected <= 0) return keyPressed = false;
 
   let startingNode = firstNode, currentNode = startingNode;
   do {
@@ -269,6 +266,8 @@ Menu.prototype.moveToPrev = function () {
 }
 
 Menu.prototype.selectItem = function () {
+  if (!this.opened || !this.enabled) return keyPressed = false;
+
   const item = nodeToSelect.node;
   const action = nodeToSelect.action;
 
