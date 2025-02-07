@@ -8,6 +8,7 @@ let leftEdge, rightEdge;
 let firstNode, latestNode, nodeToSelect = null;
 let nextNodeID = 0;
 const itemGroup = new THREE.Group();
+console.log("Creating itemGroup: ", itemGroup);
 
 export function Menu(_scene = null, _camera = null, _properties = null) {
  
@@ -36,7 +37,7 @@ Menu.OPEN_TRANSPARENCY = 2;
  */
 Menu.prototype.init = function(_properties) {
 
-  // camera factors
+  // camera & scene factors
   nextNodeID = 0;
   nodeToSelect = null;
   leftEdge = rightEdge = null;
@@ -105,12 +106,10 @@ Menu.prototype.add = function (mesh, _doOnSelect = null) {
     break;
   }
 
+  // Add the objects into the scene then reposition into rotational setup
   this.itemTray.push(node);
   this.itemTrayAction.push(_doOnSelect);
-  itemGroup.add(node.node.item);
-
-  // Add the objects into the scene then reposition into rotational setup
-  this.scene.add(node.node.item);
+  itemGroup.add(mesh);
   this.repositionNodes();
 }
 
@@ -163,6 +162,10 @@ Menu.prototype.reload = function () {
     this.itemTray.forEach(element => {
       element.node.rotationSpeed = this.defaultSpeed;
     });
+  }
+  
+  if (this.scene) {
+    this.scene.add(itemGroup);    
   }
 
   if (this.camera) this.camera.position.set(0, 0, this.cameraDistance);
@@ -286,7 +289,7 @@ Menu.prototype.selectItem = function () {
 }
 
 /**
- * Behaviors for opening or closing
+ * Behaviors for opening, closing or translations
  */
 Menu.prototype.open = function(_callback = null) {
   if (this.opened) return;
@@ -322,6 +325,40 @@ Menu.prototype.close = function(_callback = null) {
   } while (currentNode.id != firstNode.id);
   this.opened = this.enabled = false;
   if (typeof _callback === "function") _callback();
+}
+
+// Translate the menu's position, rotation & scaling based on parameters passed
+Menu.prototype.moveMenu = function(parms = null) {
+  if (!this.opened || !parms) return;
+  
+  const moveDur = (parms.duration && typeof parms.duration === "number") ? parms.duration : 0.5;
+
+  const moveX = (parms.x && typeof parms.x === "number") ? parms.x : 0;
+  const moveY = (parms.y && typeof parms.y === "number") ? parms.y : 0;
+  const moveZ = (parms.z && typeof parms.z === "number") ? parms.z : 0;  
+  
+  const rotateX = (parms.rotateX && typeof parms.rotateX === "number") ? parms.rotateX : 0;
+  const rotateY = (parms.rotateY && typeof parms.rotateY === "number") ? parms.rotateY : 0;
+  const rotateZ = (parms.rotateZ && typeof parms.rotateZ === "number") ? parms.rotateZ : 0;
+  
+  const scaleTo = (parms.scale && typeof parms.scale === "number") ? parms.scale : null;
+  const scaleToX = (parms.scaleX && typeof parms.scaleX === "number") ? parms.scaleX : 1;
+  const scaleToY = (parms.scaleX && typeof parms.scaleX === "number") ? parms.scaleY : 1;
+  const scaleToZ = (parms.scaleX && typeof parms.scaleX === "number") ? parms.scaleZ : 1;
+  const scale = {
+    x: parms.scale ? scaleTo : scaleToX,
+    y: parms.scale ? scaleTo : scaleToY,
+    z: parms.scale ? scaleTo : scaleToZ,
+    duration: moveDur
+  }
+
+  gsap.to(itemGroup.position, { x: moveX, y: moveY, z: moveZ, duration: moveDur });
+  gsap.to(itemGroup.rotation, { x: rotateX, y: rotateY, z: rotateZ, duration: moveDur});
+  gsap.to(itemGroup.scale, scale);
+}
+
+Menu.prototype.resetMenu = function () {
+  this.moveMenu({});
 }
 
 // Key events to do actions
