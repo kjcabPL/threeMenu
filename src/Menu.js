@@ -7,8 +7,6 @@ let keyPressed = false; // keypress event is deprecated
 let leftEdge, rightEdge;
 let firstNode, latestNode, nodeToSelect = null;
 let nextNodeID = 0;
-const itemGroup = new THREE.Group();
-console.log("Creating itemGroup: ", itemGroup);
 
 export function Menu(_scene = null, _camera = null, _properties = null) {
  
@@ -21,6 +19,7 @@ export function Menu(_scene = null, _camera = null, _properties = null) {
   this.menuRotate = true;
   this.enabled = true;
   this.opened = false;
+  this.itemGroup = new THREE.Group();
 
   // Initialize then reload
   this.init(_properties);
@@ -109,7 +108,7 @@ Menu.prototype.add = function (mesh, _doOnSelect = null) {
   // Add the objects into the scene then reposition into rotational setup
   this.itemTray.push(node);
   this.itemTrayAction.push(_doOnSelect);
-  itemGroup.add(mesh);
+  this.itemGroup.add(mesh);
   this.repositionNodes();
 }
 
@@ -165,7 +164,7 @@ Menu.prototype.reload = function () {
   }
   
   if (this.scene) {
-    this.scene.add(itemGroup);    
+    this.scene.add(this.itemGroup);    
   }
 
   if (this.camera) this.camera.position.set(0, 0, this.cameraDistance);
@@ -352,9 +351,9 @@ Menu.prototype.moveMenu = function(parms = null) {
     duration: moveDur
   }
 
-  gsap.to(itemGroup.position, { x: moveX, y: moveY, z: moveZ, duration: moveDur });
-  gsap.to(itemGroup.rotation, { x: rotateX, y: rotateY, z: rotateZ, duration: moveDur});
-  gsap.to(itemGroup.scale, scale);
+  gsap.to(this.itemGroup.position, { x: moveX, y: moveY, z: moveZ, duration: moveDur });
+  gsap.to(this.itemGroup.rotation, { x: rotateX, y: rotateY, z: rotateZ, duration: moveDur});
+  gsap.to(this.itemGroup.scale, scale);
 }
 
 Menu.prototype.resetMenu = function () {
