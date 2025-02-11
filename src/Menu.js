@@ -3,13 +3,15 @@ import gsap from 'gsap';
 import { MenuItem } from './MenuItem.js';
 
 // private variables
-let keyPressed = false; // keypress event is deprecated
+let keyPressed = false, clicked = false; // keypress event is deprecated
 let leftEdge, rightEdge;
 let firstNode, latestNode, nodeToSelect = null;
 let nextNodeID = 0;
+const rayCaster = new THREE.Raycaster();
+const pt = new THREE.Vector2;
 
 export function Menu(_scene = null, _camera = null, _properties = null) {
- 
+
   // menu parts
   this.scene = _scene;
   this.camera = _camera;
@@ -20,6 +22,7 @@ export function Menu(_scene = null, _camera = null, _properties = null) {
   this.enabled = true;
   this.opened = false;
   this.itemGroup = new THREE.Group();
+  this.itemCount = 0;
 
   // Initialize then reload
   this.init(_properties);
@@ -35,7 +38,6 @@ Menu.OPEN_TRANSPARENCY = 2;
  * Initialize menu properties
  */
 Menu.prototype.init = function(_properties) {
-
   // camera & scene factors
   nextNodeID = 0;
   nodeToSelect = null;
@@ -69,7 +71,7 @@ Menu.prototype.init = function(_properties) {
  * Add new items to the menu class
  * @param {*} mesh 
  */
-Menu.prototype.add = function (mesh, _doOnSelect = null) {
+Menu.prototype.add = function (mesh, _doOnSelect = null, _properties) {
   const item = new MenuItem(mesh, {
     rotationSpeed: this.defaultSpeed
   });
@@ -90,8 +92,20 @@ Menu.prototype.add = function (mesh, _doOnSelect = null) {
   node.prev.next = node;
   node.next.prev = node;
   latestNode = node;
+  mesh.name = nextNodeID;
+
+  // recurse through each group, mesh object and child in case the object passed is a group
+  function assignTags(obj, id) {
+    if (obj) obj.itemTag = nextNodeID;
+    if (Object.hasOwn(obj, "children") && obj.children.length > 0) {
+      for (let i = 0; i < obj.children.length; i++ ) {
+        assignTags(obj.children[i], nextNodeID);
+      }
+    }
+  }
+  assignTags(mesh, nextNodeID);
   nextNodeID++;
-  item.item.position.set(0,0,0);
+  mesh.position.set(0,0,0);
 
   // setup opening behavior based on this.openBehavior setting
   switch (this.openBehavior) {
@@ -106,9 +120,11 @@ Menu.prototype.add = function (mesh, _doOnSelect = null) {
   }
 
   // Add the objects into the scene then reposition into rotational setup
+  
   this.itemTray.push(node);
   this.itemTrayAction.push(_doOnSelect);
   this.itemGroup.add(mesh);
+  this.itemCount++;
   this.repositionNodes();
 }
 
@@ -180,6 +196,7 @@ Menu.prototype.animate = function (elapsedTime) {
 
   let startingNode = firstNode, currentNode = startingNode;
   do {
+    if (!currentNode) break;
     const item = currentNode.node;
     if (currentNode.selected) item.animateSelected(elapsedTime);
     else item.animateDefault(elapsedTime);
@@ -276,7 +293,7 @@ Menu.prototype.selectItem = function () {
   // grow the item when clicked
   gsap.fromTo(
     item.item.scale, 
-    { x: item.item.scale.x, y: item.item.scale.y, z: item.item.scale.z }, 
+    { x: 1, y: 1, z: 1 }, 
     { x: item.item.scale.x + this.resizeScale, y: item.item.scale.y + this.resizeScale, z: item.item.scale.z + this.resizeScale, 
       duration: this.resizeSpeed * 0.10, yoyo: true, repeat: 1,
       onComplete: () => {
@@ -360,8 +377,59 @@ Menu.prototype.resetMenu = function () {
   this.moveMenu({});
 }
 
-// Key events to do actions
+// Fire a raycaster to detect which item is clicked
+Menu.prototype.clickItem = function(evt) {
+  if (!this.opened || clicked || !evt) return;
+
+  pt.x = !isNaN(evt.clientX) ? (evt.clientX / window.innerWidth) * 2 - 1: 0;
+  pt.y = !isNaN(evt.clientY) ? -(evt.clientY / window.innerHeight) * 2 + 1 : 0;
+
+  // fire raycaster from camera to pt
+  rayCaster.setFromCamera(pt, this.camera);
+  const intersects = rayCaster.intersectObjects( this.itemGroup.children );
+  
+  if (intersects.length) {
+    const item = intersects[0].object;
+    console.log(item);
+    console.log(item.itemTag);
+    if (nodeToSelect.id === item.itemTag) {
+      this.selectItem();
+    }
+    else {
+      if (traversalCheck(nodeToSelect, rightEdge, item.itemTag)) {
+        do {
+          this.moveToNext();
+        } while (nodeToSelect.node.item.itemTag != item.itemTag)
+      }
+      else if (traversalCheck(nodeToSelect, leftEdge, item.itemTag, true)) {
+        do {
+          this.moveToPrev();
+        } while (nodeToSelect.node.item.itemTag != item.itemTag)
+      }
+    }
+  }
+}
+
+function traversalCheck(selectedNode, endNode, targetID, isLeft = false) {
+
+  const end = endNode;
+  let current = selectedNode;
+  while (current.id != end.id) {
+    if (current.id == targetID) return true;
+    else if (isLeft) current = selectedNode.prev;
+    else current = current.next;
+  }
+  if (current.id == targetID) return true;
+  return false;
+}
+
+/**
+ * Event Listeners for menu actions
+ */
 Menu.prototype.registerEvents = function () {
+  let clickTimer; //prevent continous click events
+  
+  // on keydown
   window.addEventListener("keydown", (evt) => {
     if (keyPressed || !this.enabled) return;
     keyPressed = true;
@@ -380,6 +448,22 @@ Menu.prototype.registerEvents = function () {
         break;
     }
   });
+
+  // mouse clicks
+  window.addEventListener("pointerup", (evt) => {
+    if (clickTimer) {
+      clicked = false;
+      clearTimeout(clickTimer);
+    }
+    const clickGap = 100;
+
+    clickTimer = setTimeout(()=> {
+      this.clickItem(evt)
+      clicked = true;
+    }, clickGap);
+    
+  })
+
 }
 
 /**
