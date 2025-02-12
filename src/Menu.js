@@ -30,9 +30,9 @@ export function Menu(_scene = null, _camera = null, _properties = null) {
 }
 
 // Class constants
-Menu.OPEN_NOTRANSITION = 0;
-Menu.OPEN_GROW = 1;
-Menu.OPEN_TRANSPARENCY = 2;
+Menu.prototype.OPEN_NOTRANSITION = 0;
+Menu.prototype.OPEN_GROW = 1;
+Menu.prototype.OPEN_TRANSPARENCY = 2;
 
 /**
  * Initialize menu properties
@@ -59,7 +59,7 @@ Menu.prototype.init = function(_properties) {
   this.shuffleSpeed = 2;
   this.revolvingMenu = true;
 
-  this.openBehavior = (_properties && _properties.openBehavior && typeof _properties.openBehavior === "number") ? _properties.openBehavior : this.OPEN_GROW;
+  this.openBehavior = (_properties && _properties.openBehavior && typeof _properties.openBehavior === "number") ? _properties.openBehavior : this.OPEN_NOTRANSITION;
 
   // keys for keydown events. Use strings as needed
   this.prevKey = 'ArrowLeft';
@@ -107,20 +107,18 @@ Menu.prototype.add = function (mesh, _doOnSelect = null, _properties) {
   nextNodeID++;
   mesh.position.set(0,0,0);
 
-  // setup opening behavior based on this.openBehavior setting
-  switch (this.openBehavior) {
-    case this.OPEN_GROW: 
-      node.properties["scale"] = {
-        x: node.node.item.scale.x,
-        y: node.node.item.scale.y,
-        z: node.node.item.scale.z
-      }
-      node.node.item.scale.set({x: 0, y: 0, z: 0});
-    break;
+  // save the properties of the added mesh for any opening/closing transition setting
+  node.properties["scale"] = {
+    x: node.node.item.scale.x,
+    y: node.node.item.scale.y,
+    z: node.node.item.scale.z
+  }
+  if (node.node.item.material && Object.hasOwn(node.node.item.material, "transparent")) {
+    node.properties["transparent"] = node.node.item.material.transparent;
+    node.properties["opacity"] = node.node.item.material.opacity;
   }
 
-  // Add the objects into the scene then reposition into rotational setup
-  
+  // Add the objects into the scene then reposition into rotational setup  
   this.itemTray.push(node);
   this.itemTrayAction.push(_doOnSelect);
   this.itemGroup.add(mesh);
@@ -163,6 +161,12 @@ Menu.prototype.repositionNodes = function() {
       pos.z = - (current.node.item.position.z + (this.gapBetweenItems.z * medianFactor));
       rightEdge = current;
     }
+
+    switch(this.openBehavior) {
+      case this.OPEN_GROW: 
+        current.node.item.scale.set({x: 0, y: 0, z: 0});
+      break;
+    }
     current = current.next;
   } while (current.id != firstNode.id);
 
@@ -201,8 +205,6 @@ Menu.prototype.animate = function (elapsedTime) {
     if (currentNode.selected) item.animateSelected(elapsedTime);
     else item.animateDefault(elapsedTime);
     currentNode = currentNode.next;
-    
-
   } while (currentNode.id != startingNode.id);
 }
 
@@ -316,6 +318,7 @@ Menu.prototype.open = function(_callback = null) {
   let currentNode = firstNode;
 
   switch(this.openBehavior) {
+    // resize on menu open
     case this.OPEN_GROW:
       do {
         const item = currentNode.node;
@@ -326,6 +329,47 @@ Menu.prototype.open = function(_callback = null) {
         currentNode = currentNode.next;
       } while (currentNode.id != firstNode.id);
       break;
+    // fade-in on menu open
+    case this.OPEN_TRANSPARENCY:
+      do {
+        const item = currentNode.node;
+        if (item.item.isGroup) {
+          item.item.traverse((child) => {
+            if (!child.isGroup) {
+              if (Array.isArray(child.material)) {
+                child.material.forEach((mat) => {
+                  assignTransparency(mat, 0, 1, this.openTime, 100);
+                });
+              }
+              else {
+                assignTransparency(child.material, 0, 1, this.openTime, 100);
+              }
+            }
+          });
+        }
+        else {
+          if (Array.isArray(item.item.material)) {
+            item.item.material.forEach((mat) => {
+              assignTransparency(mat, 0, 1, this.openTime, 100);
+            });
+          }
+          else {
+            assignTransparency(item.item.material, 0, 1, this.openTime, 100);
+          }
+        }
+        
+        currentNode = currentNode.next;
+      } while (currentNode.id != firstNode.id);
+      break;
+
+    function assignTransparency(material, opacityStart, opacityEnd, _duration, easeLevel = 100) {
+      material.transparent = true;
+      material.opacity = opacityStart,
+      gsap.to(
+        material,
+        { "opacity": opacityEnd, duration: _duration, ease: "steps(" + easeLevel + ")" }
+      );
+    }
   }
   
   this.opened = this.enabled = true;
@@ -394,8 +438,6 @@ Menu.prototype.clickItem = function(evt) {
   
   if (intersects.length) {
     const item = intersects[0].object;
-    console.log(item);
-    console.log(item.itemTag);
     if (nodeToSelect.id === item.itemTag) {
       this.selectItem();
     }
