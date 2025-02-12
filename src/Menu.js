@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import { MenuItem } from './MenuItem.js';
 
 // private variables
-let keyPressed = false, clicked = false; // keypress event is deprecated
+let keyPressed = false, clicked = false, isMoving = false; // keypress event is deprecated
 let leftEdge, rightEdge;
 let firstNode, latestNode, nodeToSelect = null;
 let nextNodeID = 0;
@@ -211,9 +211,10 @@ Menu.prototype.animate = function (elapsedTime) {
  */
 Menu.prototype.moveToNext = function () {
   // unless rotate to previous has been added, block this action for now
-  if (!this.opened || nextNodeID <= 1 || !this.revolvingMenu && this.itemSelected >= this.itemTray.length - 1) return keyPressed = false;
+  if (!this.opened || nextNodeID <= 1 || isMoving || !this.revolvingMenu && this.itemSelected >= this.itemTray.length - 1) return keyPressed = false;
   
   let startingNode = firstNode, currentNode = startingNode;
+  isMoving = true;
   do {
     const item = currentNode.node;
     // transfer the leftmost node to the rightmost node
@@ -244,13 +245,15 @@ Menu.prototype.moveToNext = function () {
 
   nodeToSelect.selected = true;
   this.itemSelected = nodeToSelect.id;
+  isMoving = false;
 }
 
 Menu.prototype.moveToPrev = function () {
   // unless rotate to previous has been added, block this action when exceeding the first entry
-  if (!this.opened || nextNodeID <= 1 || !this.revolvingMenu && this.itemSelected <= 0) return keyPressed = false;
+  if (!this.opened || nextNodeID <= 1 || isMoving || !this.revolvingMenu && this.itemSelected <= 0) return keyPressed = false;
 
   let startingNode = firstNode, currentNode = startingNode;
+  isMoving = true;
   do {
     const item = currentNode.node;
     // transfer the rightmost node to the leftmost node
@@ -282,6 +285,7 @@ Menu.prototype.moveToPrev = function () {
 
   nodeToSelect.selected = true;
   this.itemSelected = nodeToSelect.id;
+  isMoving = false;
 }
 
 Menu.prototype.selectItem = function () {
@@ -397,14 +401,22 @@ Menu.prototype.clickItem = function(evt) {
     }
     else {
       if (traversalCheck(nodeToSelect, rightEdge, item.itemTag)) {
-        do {
-          this.moveToNext();
-        } while (nodeToSelect.node.item.itemTag != item.itemTag)
+        this.moveToNext();
+        if (nodeToSelect.id != item.itemTag) {
+          const timer = setInterval(() => {
+            this.moveToNext();
+            if (nodeToSelect.id == item.itemTag) clearInterval(timer);
+          }, (this.itemCount * 0.10) + (200 * this.shuffleSpeed));
+        }
       }
       else if (traversalCheck(nodeToSelect, leftEdge, item.itemTag, true)) {
-        do {
-          this.moveToPrev();
-        } while (nodeToSelect.node.item.itemTag != item.itemTag)
+        this.moveToPrev();
+        if (nodeToSelect.id != item.itemTag) {
+          const timer = setInterval(() => {
+            this.moveToPrev();
+            if (nodeToSelect.id == item.itemTag) clearInterval(timer);
+          }, (this.itemCount * 0.10) + (200 * this.shuffleSpeed));
+        }
       }
     }
   }
@@ -416,7 +428,7 @@ function traversalCheck(selectedNode, endNode, targetID, isLeft = false) {
   let current = selectedNode;
   while (current.id != end.id) {
     if (current.id == targetID) return true;
-    else if (isLeft) current = selectedNode.prev;
+    else if (isLeft) current = current.prev;
     else current = current.next;
   }
   if (current.id == targetID) return true;
