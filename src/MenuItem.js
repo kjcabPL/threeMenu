@@ -31,9 +31,10 @@ MenuItem.prototype.animateDefault = function (elapsedTime = 0) {
 
 // selected rotation animation
 MenuItem.prototype.animateSelected = function (elapsedTime = 0) {
-  this.item.rotation.x = this.rotateX ? (this.rotationSpeed * 0.25) * elapsedTime : this.item.rotation.x;
-  this.item.rotation.y = this.rotateY ? (this.rotationSpeed * 0.25) * elapsedTime : this.item.rotation.y;
-  this.item.rotation.z = this.rotateZ ? (this.rotationSpeed * 0.25) * elapsedTime : this.item.rotation.z;
+  const rotSpd = this.rotationSpeed * 0.25;
+  this.item.rotation.x = this.rotateX ? rotSpd * elapsedTime : this.item.rotation.x;
+  this.item.rotation.y = this.rotateY ? rotSpd * elapsedTime : this.item.rotation.y;
+  this.item.rotation.z = this.rotateZ ? rotSpd * elapsedTime : this.item.rotation.z;
 }
 
 function errorMsg(str) {

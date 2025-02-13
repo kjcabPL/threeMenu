@@ -10,6 +10,12 @@ let nextNodeID = 0;
 const rayCaster = new THREE.Raycaster();
 const pt = new THREE.Vector2;
 
+/**
+ * Menu class initializer
+ * @param {THREE.scale} _scene - Three.js Scene that will use the menu, 
+ * @param {THREE.camera} _camera - Three.js Camera for the menu
+ * @param {Object} [_properties] - Optional properties for the Menu class
+ */
 export function Menu(_scene = null, _camera = null, _properties = null) {
 
   // menu parts
@@ -52,13 +58,12 @@ Menu.prototype.init = function(_properties) {
     z: 0
   }
   this.selectBehavior = "grow" // For now only Grow behavior is available. Make "shine" behavior available too
-  this.resizeScale = 0.5;
-  this.resizeSpeed = 2;
-  this.closeTime = 0.5;
-  this.openTime = 0.5;
-  this.shuffleSpeed = 2;
-  this.revolvingMenu = true;
-
+  this.resizeScale = (_properties && typeof _properties.resizeScale === "number") ? _properties.resizeScale : 0.5;
+  this.resizeSpeed = (_properties && typeof _properties.resizeSpeed === "number") ? _properties.resizeSpeed : 2;
+  this.closeTime =(_properties && typeof _properties.closeTime === "number") ? _properties.closeTime : 0.5;
+  this.openTime = (_properties && typeof _properties.openTime === "number") ? _properties.openTime : 0.5;
+  this.shuffleSpeed = (_properties && typeof _properties.shuffleSpeed === "number") ? _properties.shuffleSpeed : 2;
+  this.revolvingMenu = (_properties && _properties.revolvingMenu) ? _properties.revolvingMenu : true;
   this.openBehavior = (_properties && _properties.openBehavior && typeof _properties.openBehavior === "number") ? _properties.openBehavior : this.OPEN_NOTRANSITION;
 
   // keys for keydown events. Use strings as needed
@@ -68,8 +73,10 @@ Menu.prototype.init = function(_properties) {
 }
 
 /**
- * Add new items to the menu class
- * @param {*} mesh 
+ * Add new items to the Menu object
+ * @param {THREE.Mesh | THREE.Group} mesh - A Mesh or Group of meshes to represent the item
+ * @param {function} _doOnSelect - Optional callback function for the item
+ * @param {object} _properties - Optional properites for the item such as its default animation behavior
  */
 Menu.prototype.add = function (mesh, _doOnSelect = null, _properties) {
   const item = new MenuItem(mesh, {
@@ -174,7 +181,7 @@ Menu.prototype.repositionNodes = function() {
 }
 
 /**
- * Reload all Menu behaviors if properties are updated
+ * Reload all Menu behaviors if its properties are updated
  */
 Menu.prototype.reload = function () {
   if (this.itemTray.length > 0) {
@@ -193,9 +200,9 @@ Menu.prototype.reload = function () {
 
 /**
  * Animate every item in the menu tray. Requires elapsedTime to work
- * @param {*} elapsedTime 
+ * @param {*} elapsedTime - delta time for the animation
  */
-Menu.prototype.animate = function (elapsedTime) {
+Menu.prototype.animate = function (elapsedTime = null) {
   if (!elapsedTime) return;
 
   let startingNode = firstNode, currentNode = startingNode;
