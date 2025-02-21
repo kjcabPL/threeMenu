@@ -52,19 +52,28 @@ Menu.prototype.init = function(_properties) {
   this.cameraDistance = 1;
 
   // item positioning and behavior factors
+  
   this.gapBetweenItems = {
     x: 1,
     y: 0,
     z: 0
   }
+  if (_properties && typeof _properties.gapBetweenItems === "object" )
+  {
+    this.gapBetweenItems.x = (typeof _properties.gapBetweenItems.x === "number" ) ? _properties.gapBetweenItems.x : this.gapBetweenItems.x;
+    this.gapBetweenItems.y = (typeof _properties.gapBetweenItems.y === "number" ) ? _properties.gapBetweenItems.y : this.gapBetweenItems.y;
+    this.gapBetweenItems.z = (typeof _properties.gapBetweenItems.z === "number" ) ? _properties.gapBetweenItems.z : this.gapBetweenItems.z;
+  }
+  
   this.selectBehavior = "grow" // For now only Grow behavior is available. Make "shine" behavior available too
   this.resizeScale = (_properties && typeof _properties.resizeScale === "number") ? _properties.resizeScale : 0.5;
   this.resizeSpeed = (_properties && typeof _properties.resizeSpeed === "number") ? _properties.resizeSpeed : 2;
   this.closeTime =(_properties && typeof _properties.closeTime === "number") ? _properties.closeTime : 0.5;
   this.openTime = (_properties && typeof _properties.openTime === "number") ? _properties.openTime : 0.5;
-  this.shuffleSpeed = (_properties && typeof _properties.shuffleSpeed === "number") ? _properties.shuffleSpeed : 2;
+  this.shuffleSpeed = (_properties && typeof _properties.shuffleSpeed === "number") ? _properties.shuffleSpeed : 2;  
   this.revolvingMenu = (_properties && _properties.revolvingMenu) ? _properties.revolvingMenu : true;
   this.openBehavior = (_properties && _properties.openBehavior && typeof _properties.openBehavior === "number") ? _properties.openBehavior : this.OPEN_NOTRANSITION;
+  
 
   // keys for keydown events. Use strings as needed
   this.prevKey = 'ArrowLeft';
