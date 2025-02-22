@@ -13,8 +13,8 @@ export function MenuItem(mesh, _properties = {}) {
   // setup default animation on items based on properties
   this.rotationSpeed = (_properties && _properties.rotationSpeed) ? _properties.rotationSpeed : 0.01;
   this.rotateX = (_properties && _properties.rotateX) ? _properties.rotateX : false;
-  this.rotateY = (_properties && _properties.rotateX) ? _properties.rotateX : true;
-  this.rotateZ = (_properties && _properties.rotateX) ? _properties.rotateX : false;
+  this.rotateY = (_properties && _properties.rotateX) ? _properties.rotateY : true;
+  this.rotateZ = (_properties && _properties.rotateX) ? _properties.rotateZ : false;
 }
 
 
