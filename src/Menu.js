@@ -52,17 +52,19 @@ Menu.prototype.init = function(_properties) {
   this.cameraDistance = 1;
 
   // item positioning and behavior factors
-  
-  this.gapBetweenItems = {
-    x: 1,
-    y: 0,
-    z: 0
-  }
+  this.gapBetweenItems = { x: 1, y: 0, z: 0 };
+  this.menuOffsetItems = { x: 0, y: 0, z: 0 };
   if (_properties && typeof _properties.gapBetweenItems === "object" )
   {
     this.gapBetweenItems.x = (typeof _properties.gapBetweenItems.x === "number" ) ? _properties.gapBetweenItems.x : this.gapBetweenItems.x;
     this.gapBetweenItems.y = (typeof _properties.gapBetweenItems.y === "number" ) ? _properties.gapBetweenItems.y : this.gapBetweenItems.y;
     this.gapBetweenItems.z = (typeof _properties.gapBetweenItems.z === "number" ) ? _properties.gapBetweenItems.z : this.gapBetweenItems.z;
+  }
+  if (_properties && typeof _properties.menuOffsetItems === "object" )
+  {
+    this.menuOffsetItems.x = (typeof _properties.menuOffsetItems.x === "number" ) ? _properties.menuOffsetItems.x : this.menuOffsetItems.x;
+    this.menuOffsetItems.y = (typeof _properties.menuOffsetItems.y === "number" ) ? _properties.menuOffsetItems.y : this.menuOffsetItems.y;
+    this.menuOffsetItems.z = (typeof _properties.menuOffsetItems.z === "number" ) ? _properties.menuOffsetItems.z : this.menuOffsetItems.z;
   }
   
   this.selectBehavior = "grow" // For now only Grow behavior is available. Make "shine" behavior available too
@@ -143,6 +145,10 @@ Menu.prototype.add = function (mesh, _doOnSelect = null, _properties) {
 }
 
 Menu.prototype.repositionNodes = function() {
+
+  // reset the itemGroup's position to original 0,0,0 in case new items are added every time
+  this.itemGroup.position.set(0, 0 ,0);
+
   let pos = {
     x: 0 - this.gapBetweenItems.x, 
     y: 0 - this.gapBetweenItems.y, 
@@ -172,9 +178,9 @@ Menu.prototype.repositionNodes = function() {
     if (current.id === median) {
       // add a medianFactor for odd-valued entries to compensate for the extra gap between items
       medianFactor = isEven ? 0 : 1;
-      pos.x = - (current.node.item.position.x + (this.gapBetweenItems.x * medianFactor));
-      pos.y = - (current.node.item.position.y + (this.gapBetweenItems.y * medianFactor));
-      pos.z = - (current.node.item.position.z + (this.gapBetweenItems.z * medianFactor));
+      pos.x = - (current.node.item.position.x + ((this.gapBetweenItems.x ) * medianFactor)) ;
+      pos.y = - (current.node.item.position.y + ((this.gapBetweenItems.y ) * medianFactor)) ;
+      pos.z = - (current.node.item.position.z + ((this.gapBetweenItems.z ) * medianFactor)) ;
       rightEdge = current;
     }
 
@@ -185,6 +191,12 @@ Menu.prototype.repositionNodes = function() {
     }
     current = current.next;
   } while (current.id != firstNode.id);
+
+  
+  // apply the offset after calculating the positions
+  this.itemGroup.position.x += this.menuOffsetItems.x;
+  this.itemGroup.position.y += this.menuOffsetItems.y;
+  this.itemGroup.position.z += this.menuOffsetItems.z;
 
   return pos;
 }
@@ -413,9 +425,9 @@ Menu.prototype.moveMenu = function(parms = null) {
   
   const moveDur = (parms.duration && typeof parms.duration === "number") ? parms.duration : 0.5;
 
-  const moveX = (parms.x && typeof parms.x === "number") ? parms.x : 0;
-  const moveY = (parms.y && typeof parms.y === "number") ? parms.y : 0;
-  const moveZ = (parms.z && typeof parms.z === "number") ? parms.z : 0;  
+  const moveX = (parms.x && typeof parms.x === "number") ? parms.x + this.menuOffsetItems.x: 0 + this.menuOffsetItems.x;
+  const moveY = (parms.y && typeof parms.y === "number") ? parms.y + this.menuOffsetItems.y: 0 + this.menuOffsetItems.y;
+  const moveZ = (parms.z && typeof parms.z === "number") ? parms.z + this.menuOffsetItems.z: 0 + this.menuOffsetItems.z;
   
   const rotateX = (parms.rotateX && typeof parms.rotateX === "number") ? parms.rotateX : 0;
   const rotateY = (parms.rotateY && typeof parms.rotateY === "number") ? parms.rotateY : 0;
