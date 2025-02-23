@@ -420,7 +420,7 @@ Menu.prototype.close = function(_callback = null) {
 }
 
 // Translate the menu's position, rotation & scaling based on parameters passed
-Menu.prototype.moveMenu = function(parms = null) {
+Menu.prototype.moveMenu = function(parms = {}) {
   if (!this.opened || !parms) return;
   
   const moveDur = (parms.duration && typeof parms.duration === "number") ? parms.duration : 0.5;
@@ -451,7 +451,7 @@ Menu.prototype.moveMenu = function(parms = null) {
 }
 
 // Translate the menu's items such as their rotations & scaling based on parameters passed
-Menu.prototype.itemTransition = function(parms = null) {
+Menu.prototype.itemTransition = function(parms = {}) {
   const moveDur = (parms.duration && typeof parms.duration === "number") ? parms.duration : 0.5;
 
   const scaleTo = (parms.scale && typeof parms.scale === "number") ? parms.scale : null;
