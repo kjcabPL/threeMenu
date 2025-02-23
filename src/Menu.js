@@ -437,20 +437,52 @@ Menu.prototype.moveMenu = function(parms = null) {
   const scaleToX = (parms.scaleX && typeof parms.scaleX === "number") ? parms.scaleX : 1;
   const scaleToY = (parms.scaleX && typeof parms.scaleX === "number") ? parms.scaleY : 1;
   const scaleToZ = (parms.scaleX && typeof parms.scaleX === "number") ? parms.scaleZ : 1;
+
   const scale = {
     x: parms.scale ? scaleTo : scaleToX,
     y: parms.scale ? scaleTo : scaleToY,
     z: parms.scale ? scaleTo : scaleToZ,
     duration: moveDur
-  }
+  };
 
   gsap.to(this.itemGroup.position, { x: moveX, y: moveY, z: moveZ, duration: moveDur });
   gsap.to(this.itemGroup.rotation, { x: rotateX, y: rotateY, z: rotateZ, duration: moveDur});
   gsap.to(this.itemGroup.scale, scale);
 }
 
+// Translate the menu's items such as their rotations & scaling based on parameters passed
+Menu.prototype.itemTransition = function(parms = null) {
+  const moveDur = (parms.duration && typeof parms.duration === "number") ? parms.duration : 0.5;
+
+  const scaleTo = (parms.scale && typeof parms.scale === "number") ? parms.scale : null;
+  const scaleToX = (parms.scaleX && typeof parms.scaleX === "number") ? parms.scaleX : 1;
+  const scaleToY = (parms.scaleX && typeof parms.scaleX === "number") ? parms.scaleY : 1;
+  const scaleToZ = (parms.scaleX && typeof parms.scaleX === "number") ? parms.scaleZ : 1;
+
+  const iRotateX = (parms.rotateX && typeof parms.rotateX === "number") ? parms.rotateX : 0;
+  const iRotateY = (parms.rotateY && typeof parms.rotateY === "number") ? parms.rotateY : 0;
+  const iRotateZ = (parms.rotateZ && typeof parms.rotateZ === "number") ? parms.rotateZ : 0;
+
+  const scale = {
+    x: parms.scale ? scaleTo : scaleToX,
+    y: parms.scale ? scaleTo : scaleToY,
+    z: parms.scale ? scaleTo : scaleToZ,
+    duration: moveDur
+  };
+
+  const items = this.itemGroup.children;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    gsap.to(item.rotation, {x: iRotateX, duration: moveDur });
+    gsap.to(item.rotation, {y: iRotateY, duration: moveDur });
+    gsap.to(item.rotation, {z: iRotateZ, duration: moveDur });
+    gsap.to(item.scale, scale);
+  }
+}
+
 Menu.prototype.resetMenu = function () {
   this.moveMenu({});
+  this.itemTransition({});
 }
 
 // Fire a raycaster to detect which item is clicked
