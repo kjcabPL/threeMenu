@@ -75,12 +75,12 @@ Menu.prototype.init = function(_properties) {
   this.shuffleSpeed = (_properties && typeof _properties.shuffleSpeed === "number") ? _properties.shuffleSpeed : 2;  
   this.revolvingMenu = (_properties && _properties.revolvingMenu) ? _properties.revolvingMenu : true;
   this.openBehavior = (_properties && _properties.openBehavior && typeof _properties.openBehavior === "number") ? _properties.openBehavior : this.OPEN_NOTRANSITION;
-  
 
   // keys for keydown events. Use strings as needed
-  this.prevKey = 'ArrowLeft';
-  this.nextKey = 'ArrowRight';
-  this.selectKey = 'Enter';
+  this.prevKey = (_properties && _properties.prevKey && typeof _properties.prevKey === "string") ? _properties.prevKey : 'ArrowLeft';
+  this.nextKey = (_properties && _properties.nextKey && typeof _properties.nextKey === "string") ? _properties.nextKey : 'ArrowRight';
+  this.selectKey = (_properties && _properties.selectKey && typeof _properties.selectKey === "string") ? _properties.selectKey : 'Enter';
+
 }
 
 /**
@@ -90,9 +90,10 @@ Menu.prototype.init = function(_properties) {
  * @param {object} _properties - Optional properites for the item such as its default animation behavior
  */
 Menu.prototype.add = function (mesh, _doOnSelect = null, _properties) {
-  const item = new MenuItem(mesh, {
-    rotationSpeed: this.defaultSpeed
-  });
+  
+  const props = (_properties) ? _properties : {};
+  props["rotationSpeed"] = this.defaultSpeed;
+  const item = new MenuItem(mesh, props);
 
   const node = new MenuNode(item, _doOnSelect, this.itemTray.length, nextNodeID);
   
@@ -352,7 +353,11 @@ Menu.prototype.open = function(_callback = null) {
         const item = currentNode.node;
         gsap.to(
           item.item.scale,
-          { x: currentNode.properties.scale.x, y: currentNode.properties.scale.y, z: currentNode.properties.scale.z, duration: this.openTime }
+          { 
+            x: currentNode.properties.scale.x, y: currentNode.properties.scale.y, z: currentNode.properties.scale.z, 
+            duration: this.openTime,
+            onComplete: () => { item.enabled = true; }
+          }
         );
         currentNode = currentNode.next;
       } while (currentNode.id != firstNode.id);
@@ -366,11 +371,11 @@ Menu.prototype.open = function(_callback = null) {
             if (!child.isGroup) {
               if (Array.isArray(child.material)) {
                 child.material.forEach((mat) => {
-                  assignTransparency(mat, 0, 1, this.openTime, 100);
+                  assignTransparency(item, mat, 0, 1, this.openTime, 100);
                 });
               }
               else {
-                assignTransparency(child.material, 0, 1, this.openTime, 100);
+                assignTransparency(item, child.material, 0, 1, this.openTime, 100);
               }
             }
           });
@@ -378,11 +383,11 @@ Menu.prototype.open = function(_callback = null) {
         else {
           if (Array.isArray(item.item.material)) {
             item.item.material.forEach((mat) => {
-              assignTransparency(mat, 0, 1, this.openTime, 100);
+              assignTransparency(item, mat, 0, 1, this.openTime, 100);
             });
           }
           else {
-            assignTransparency(item.item.material, 0, 1, this.openTime, 100);
+            assignTransparency(item, item.item.material, 0, 1, this.openTime, 100);
           }
         }
         
@@ -390,12 +395,17 @@ Menu.prototype.open = function(_callback = null) {
       } while (currentNode.id != firstNode.id);
       break;
 
-    function assignTransparency(material, opacityStart, opacityEnd, _duration, easeLevel = 100) {
+    function assignTransparency(menuItem, material, opacityStart, opacityEnd, _duration, easeLevel = 100) {
       material.transparent = true;
       material.opacity = opacityStart,
       gsap.to(
         material,
-        { "opacity": opacityEnd, duration: _duration, ease: "steps(" + easeLevel + ")" }
+        { 
+          "opacity": opacityEnd, 
+          duration: _duration, 
+          ease: "steps(" + easeLevel + ")",
+          onComplete: () => { menuItem.enabled = true; }
+        }
       );
     }
   }
